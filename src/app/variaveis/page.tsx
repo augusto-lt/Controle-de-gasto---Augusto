@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useState } from "react";
 import { Receipt } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { ExpenseRow } from "@/components/expense-row";
@@ -30,15 +29,16 @@ export default function VariaveisPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<VariableExpense | null>(null);
 
-  const openNew = () => {
+  const openNew = useCallback(() => {
     setEditing(null);
     setSheetOpen(true);
-  };
+  }, []);
 
-  const openEdit = (expense: VariableExpense) => {
+  // Identidade estável para evitar re-render dos rows memoizados.
+  const openEdit = useCallback((expense: VariableExpense) => {
     setEditing(expense);
     setSheetOpen(true);
-  };
+  }, []);
 
   const isEmpty = groups.length === 0;
 
@@ -52,53 +52,40 @@ export default function VariaveisPage() {
         <EmptyState
           icon={Receipt}
           title="Nenhum gasto neste mês"
-          description="Toque no + para registrar seu primeiro gasto. Você pode digitar algo como “fanta 6,50” no campo de descrição."
+          description={
+            "Toque no + para registrar seu primeiro gasto. Você pode digitar algo como “fanta 6,50” no campo de descrição."
+          }
         />
       ) : (
-        <ul
-          // padding inferior considera total fixo (h-12) + bottom-nav (h-16)
-          // + safe area + folga para o FAB
-          className="flex-1 overflow-y-auto pb-[calc(7rem+env(safe-area-inset-bottom))]"
-        >
-          <AnimatePresence initial={false}>
-            {groups.map((group) => (
-              <motion.li
-                key={group.day}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="sticky top-0 z-10 flex items-center justify-between bg-muted/60 px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur">
-                  <span>{formatRelativeDayLabel(group.day)}</span>
-                  <span className="tabular-nums">
-                    {formatBRL(group.totalCents)}
-                  </span>
-                </div>
-                <ul>
-                  {group.items.map((item) => (
-                    <li key={item.id}>
-                      <ExpenseRow
-                        expense={item}
-                        category={categoryMap.get(item.categoryId)}
-                        onEdit={openEdit}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </motion.li>
-            ))}
-          </AnimatePresence>
+        <ul className="flex-1 overflow-y-auto pb-[calc(7rem+env(safe-area-inset-bottom))]">
+          {groups.map((group) => (
+            <li key={group.day}>
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-muted px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span>{formatRelativeDayLabel(group.day)}</span>
+                <span className="tabular-nums">
+                  {formatBRL(group.totalCents)}
+                </span>
+              </div>
+              <ul>
+                {group.items.map((item) => (
+                  <li key={item.id}>
+                    <ExpenseRow
+                      expense={item}
+                      category={categoryMap.get(item.categoryId)}
+                      onEdit={openEdit}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
         </ul>
       )}
 
       {/* Total do mês fixo no rodapé, acima da bottom-nav */}
       <div
-        className="fixed inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur"
-        style={{
-          bottom: `calc(4rem + env(safe-area-inset-bottom))`,
-        }}
+        className="fixed inset-x-0 z-20 border-t border-border bg-background"
+        style={{ bottom: `calc(4rem + env(safe-area-inset-bottom))` }}
       >
         <div className="flex h-12 items-center justify-between px-4">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

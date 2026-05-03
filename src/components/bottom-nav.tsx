@@ -37,7 +37,7 @@ export function BottomNav() {
       aria-label="Navegação principal"
       className={cn(
         "sticky bottom-0 z-40 w-full",
-        "border-t border-border bg-background/95 backdrop-blur",
+        "border-t border-border bg-background",
         // safe area do iOS / Android gesture bar
         "pb-[env(safe-area-inset-bottom)]",
       )}

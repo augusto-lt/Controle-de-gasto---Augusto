@@ -8,6 +8,8 @@ export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    // identidade estável do PWA — independe da URL onde está hospedado
+    id: "controle-de-gastos-augusto",
     name: "Controle de Gastos",
     short_name: "Gastos",
     description:

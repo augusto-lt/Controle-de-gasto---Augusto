@@ -1,28 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { CategoryDonut } from "@/components/dashboard/category-donut";
+import dynamic from "next/dynamic";
+import { ChartSkeleton } from "@/components/dashboard/chart-skeleton";
 import { GoalCard } from "@/components/dashboard/goal-card";
-import { Last7DaysBar } from "@/components/dashboard/last-7-days-bar";
 import { TotalCard } from "@/components/dashboard/total-card";
 import { Fab } from "@/components/fab";
 import { QuickAddSheet } from "@/components/quick-add-sheet";
 import { useCategoryMap } from "@/hooks/use-categories";
 import { useMonthlySummary } from "@/hooks/use-monthly-summary";
 
-const containerVariants = {
-  hidden: { opacity: 1 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
-  },
-};
+// Recharts é pesado (~100kb gz). Carrega só quando o dashboard monta,
+// fora do bundle inicial — first paint é dos cards (Total + Goal) que são
+// gratuitos.
+const Last7DaysBar = dynamic(
+  () =>
+    import("@/components/dashboard/last-7-days-bar").then((m) => ({
+      default: m.Last7DaysBar,
+    })),
+  { ssr: false, loading: () => <ChartSkeleton title="Últimos 7 dias" /> },
+);
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
-};
+const CategoryDonut = dynamic(
+  () =>
+    import("@/components/dashboard/category-donut").then((m) => ({
+      default: m.CategoryDonut,
+    })),
+  {
+    ssr: false,
+    loading: () => <ChartSkeleton title="Por categoria" heightClass="h-36" />,
+  },
+);
 
 export default function HomePage() {
   const summary = useMonthlySummary();
@@ -31,40 +39,44 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <motion.div
-        initial="hidden"
-        animate="show"
-        variants={containerVariants}
-        className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 pb-[calc(7rem+env(safe-area-inset-bottom))]"
-      >
-        <motion.div variants={itemVariants}>
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 pb-[calc(7rem+env(safe-area-inset-bottom))]">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <TotalCard
             monthKey={summary.monthKey}
             totalCents={summary.totalCents}
             fixedCents={summary.fixedCents}
             variableCents={summary.variableCents}
           />
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants}>
+        <div
+          className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+          style={{ animationDelay: "60ms", animationFillMode: "backwards" }}
+        >
           <GoalCard
             todayCents={summary.todayCents}
             goalCents={summary.dailyGoalCents}
             status={summary.goalStatus}
           />
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants}>
+        <div
+          className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+          style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
+        >
           <Last7DaysBar data={summary.last7Days} />
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants}>
+        <div
+          className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+          style={{ animationDelay: "180ms", animationFillMode: "backwards" }}
+        >
           <CategoryDonut
             byCategory={summary.byCategory}
             categoryMap={categoryMap}
           />
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <Fab onClick={() => setSheetOpen(true)} aria-label="Adicionar gasto" />
 

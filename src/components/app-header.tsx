@@ -29,7 +29,7 @@ export function AppHeader() {
     <header
       className={cn(
         "sticky top-0 z-40 w-full",
-        "border-b border-border bg-background/95 backdrop-blur",
+        "border-b border-border bg-background",
         "pt-[env(safe-area-inset-top)]",
       )}
     >

@@ -19,6 +19,11 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Tree-shaking agressivo desses pacotes (cada `import { Foo }` vira
+  // import direto do módulo, evita pull do barrel completo).
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+  },
   ...(isGhPages
     ? {
         output: "export" as const,

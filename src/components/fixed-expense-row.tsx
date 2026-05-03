@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CategoryIcon } from "@/components/category-icon";
 import { Switch } from "@/components/ui/switch";
+import { useSwipeToDelete } from "@/hooks/use-swipe-to-delete";
 import {
   addFixedExpense,
   deleteFixedExpense,
@@ -21,99 +21,88 @@ interface FixedExpenseRowProps {
   onEdit: (expense: FixedExpense) => void;
 }
 
-const SWIPE_THRESHOLD = -88;
-const ACTION_REVEAL = -72;
-
-/**
- * Linha de assinatura mensal.
- *   - Tap → editar
- *   - Swipe-left → excluir com undo
- *   - Toggle ativo/inativo na lateral (com stopPropagation para não abrir edit)
- *   - Linhas inativas ficam atenuadas (opacity-60) mas continuam interativas
- */
-export function FixedExpenseRow({
+function FixedExpenseRowImpl({
   expense,
   category,
   onEdit,
 }: FixedExpenseRowProps) {
-  const x = useMotionValue(0);
-  const deleteOpacity = useTransform(x, [ACTION_REVEAL, 0], [1, 0.4]);
-  const [isDragging, setIsDragging] = React.useState(false);
-
-  const handleDelete = async () => {
+  const handleDelete = React.useCallback(() => {
     const snapshot: FixedExpense = { ...expense };
-    try {
-      await deleteFixedExpense(expense.id);
-      toast("Assinatura excluída", {
-        action: {
-          label: "Desfazer",
-          onClick: () => {
-            void addFixedExpense(snapshot);
-          },
-        },
-        duration: 5000,
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Não foi possível excluir");
-    }
-  };
-
-  const onDragEnd = (_e: unknown, info: PanInfo) => {
-    setIsDragging(false);
-    if (info.offset.x < SWIPE_THRESHOLD) {
-      x.set(-window.innerWidth);
-      window.setTimeout(() => void handleDelete(), 180);
-    } else {
-      x.set(0);
-    }
-  };
-
-  const onClick = () => {
-    if (isDragging) return;
-    onEdit(expense);
-  };
-
-  const handleToggle = (next: boolean) => {
     void (async () => {
       try {
-        await toggleFixedExpense(expense.id, next);
+        await deleteFixedExpense(expense.id);
+        toast("Assinatura excluída", {
+          action: {
+            label: "Desfazer",
+            onClick: () => {
+              void addFixedExpense(snapshot);
+            },
+          },
+          duration: 5000,
+        });
       } catch (err) {
         console.error(err);
-        toast.error("Não foi possível alterar");
+        toast.error("Não foi possível excluir");
       }
     })();
-  };
+  }, [expense]);
+
+  const onTap = React.useCallback(() => onEdit(expense), [expense, onEdit]);
+  const {
+    ref: swipeRef,
+    dragHandlers,
+    onClick: onRowClick,
+  } = useSwipeToDelete({ onTap, onDelete: handleDelete });
+
+  const handleToggle = React.useCallback(
+    (next: boolean) => {
+      void (async () => {
+        try {
+          await toggleFixedExpense(expense.id, next);
+        } catch (err) {
+          console.error(err);
+          toast.error("Não foi possível alterar");
+        }
+      })();
+    },
+    [expense.id],
+  );
+
+  // Switch e seu container precisam parar a propagação dos pointer events
+  // para que o usuário consiga clicar no toggle sem disparar o swipe.
+  const stopPointer: React.PointerEventHandler = (e) => e.stopPropagation();
 
   return (
-    <div className="relative isolate">
-      <motion.div
+    <div className="relative isolate overflow-hidden">
+      <div
         aria-hidden
-        style={{ opacity: deleteOpacity }}
-        className="absolute inset-0 -z-10 flex items-center justify-end bg-destructive/15 px-6 text-destructive"
+        className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-end bg-destructive/15 px-6 text-destructive"
       >
         <Trash2 className="size-5" />
-      </motion.div>
+      </div>
 
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -160, right: 0 }}
-        dragElastic={{ left: 0.2, right: 0 }}
-        dragMomentum={false}
-        style={{ x }}
-        onDragStart={() => setIsDragging(true)}
-        onDragEnd={onDragEnd}
+      <div
+        ref={swipeRef}
+        {...dragHandlers}
+        style={{
+          transform: "translateX(var(--swipe-x, 0px))",
+          touchAction: "pan-y",
+        }}
         className={cn(
-          "flex w-full items-center gap-3 bg-background px-4 py-3",
+          "flex items-center gap-3 bg-background pr-3 transition-transform duration-200",
+          "data-[dragging=true]:transition-none",
           "border-b border-border last:border-b-0",
-          "touch-pan-y",
+          "will-change-transform",
           !expense.active && "opacity-60",
         )}
       >
         <button
           type="button"
-          onClick={onClick}
-          className="flex flex-1 items-center gap-3 text-left focus-visible:outline-none"
+          onClick={onRowClick}
+          className={cn(
+            "flex flex-1 items-center gap-3 py-3 pl-4 text-left",
+            "active:bg-accent focus-visible:bg-accent focus-visible:outline-none",
+          )}
         >
           <CategoryIcon category={category} size="md" />
 
@@ -130,16 +119,35 @@ export function FixedExpenseRow({
           </span>
         </button>
 
-        <Switch
-          checked={expense.active}
-          onCheckedChange={handleToggle}
-          aria-label={
-            expense.active ? "Desativar assinatura" : "Ativar assinatura"
-          }
-          // não dispara o tap-to-edit do botão pai (Switch já é um elemento separado)
+        <span
+          onPointerDown={stopPointer}
           onClick={(e) => e.stopPropagation()}
-        />
-      </motion.div>
+          className="flex items-center"
+        >
+          <Switch
+            checked={expense.active}
+            onCheckedChange={handleToggle}
+            aria-label={
+              expense.active ? "Desativar assinatura" : "Ativar assinatura"
+            }
+          />
+        </span>
+      </div>
     </div>
   );
 }
+
+export const FixedExpenseRow = React.memo(
+  FixedExpenseRowImpl,
+  (prev, next) =>
+    prev.onEdit === next.onEdit &&
+    prev.category?.id === next.category?.id &&
+    prev.category?.color === next.category?.color &&
+    prev.category?.name === next.category?.name &&
+    prev.expense.id === next.expense.id &&
+    prev.expense.name === next.expense.name &&
+    prev.expense.amountCents === next.expense.amountCents &&
+    prev.expense.dueDay === next.expense.dueDay &&
+    prev.expense.categoryId === next.expense.categoryId &&
+    prev.expense.active === next.expense.active,
+);

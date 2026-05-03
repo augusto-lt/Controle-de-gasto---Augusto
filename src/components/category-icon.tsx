@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   Car,
   CupSoda,
@@ -46,7 +47,7 @@ const SIZES: Record<NonNullable<CategoryIconProps["size"]>, string> = {
  * se a categoria não foi encontrada (ex.: gasto antigo cuja categoria foi
  * deletada).
  */
-export function CategoryIcon({
+function CategoryIconImpl({
   category,
   size = "md",
   className,
@@ -71,3 +72,5 @@ export function CategoryIcon({
     </span>
   );
 }
+
+export const CategoryIcon = memo(CategoryIconImpl);
