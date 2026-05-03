@@ -30,8 +30,10 @@ export function AppBootstrap() {
       typeof window !== "undefined" &&
       "serviceWorker" in navigator
     ) {
+      // Honra basePath quando hospedado em sub-path (ex.: GitHub Pages).
+      const bp = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
       navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
+        .register(`${bp}/sw.js`, { scope: `${bp}/` })
         .catch((err) => {
           console.error("[bootstrap] falha ao registrar service worker", err);
         });
