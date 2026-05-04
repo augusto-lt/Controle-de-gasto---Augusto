@@ -93,7 +93,6 @@ function FixedExpenseRowImpl({
           "data-[dragging=true]:transition-none",
           "border-b border-border last:border-b-0",
           "will-change-transform",
-          !expense.active && "opacity-60",
         )}
       >
         <button
@@ -102,6 +101,8 @@ function FixedExpenseRowImpl({
           className={cn(
             "flex flex-1 items-center gap-3 py-3 pl-4 text-left",
             "active:bg-accent focus-visible:bg-accent focus-visible:outline-none",
+            // dim no conteúdo, NÃO no wrapper, pra não vazar a lixeira de fundo
+            !expense.active && "opacity-60",
           )}
         >
           <CategoryIcon category={category} size="md" />
@@ -122,7 +123,10 @@ function FixedExpenseRowImpl({
         <span
           onPointerDown={stopPointer}
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center"
+          className={cn(
+            "flex items-center",
+            !expense.active && "opacity-60",
+          )}
         >
           <Switch
             checked={expense.active}

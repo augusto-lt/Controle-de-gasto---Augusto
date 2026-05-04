@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { useCategories } from "@/hooks/use-categories";
 import { useLastCategoryId } from "@/hooks/use-last-category";
 import {
   addVariableExpense,
+  deleteVariableExpense,
   updateVariableExpense,
 } from "@/lib/db";
 import { currentDayKey, type DayKey } from "@/lib/date";
@@ -119,6 +121,30 @@ export function QuickAddSheet({
     }
   };
 
+  const handleDelete = async () => {
+    if (!editing) return;
+    const snapshot: VariableExpense = { ...editing };
+    setSubmitting(true);
+    try {
+      await deleteVariableExpense(editing.id);
+      onOpenChange(false);
+      toast("Gasto excluído", {
+        action: {
+          label: "Desfazer",
+          onClick: () => {
+            void addVariableExpense(snapshot);
+          },
+        },
+        duration: 5000,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível excluir");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
     void submit();
@@ -176,6 +202,21 @@ export function QuickAddSheet({
               onChange={(e) => setDay(e.target.value || currentDayKey())}
             />
           </div>
+
+          {editing && (
+            <div className="border-t border-border pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={submitting}
+                onClick={() => void handleDelete()}
+                className="w-full justify-center text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Excluir gasto
+              </Button>
+            </div>
+          )}
 
           <button type="submit" hidden aria-hidden tabIndex={-1} />
         </form>

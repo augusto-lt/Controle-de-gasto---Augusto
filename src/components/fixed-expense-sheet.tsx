@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,11 @@ import { Switch } from "@/components/ui/switch";
 import { CategoryPicker } from "@/components/category-picker";
 import { MoneyInput } from "@/components/money-input";
 import { useCategories } from "@/hooks/use-categories";
-import { addFixedExpense, updateFixedExpense } from "@/lib/db";
+import {
+  addFixedExpense,
+  deleteFixedExpense,
+  updateFixedExpense,
+} from "@/lib/db";
 import { CATEGORY_IDS } from "@/lib/seed";
 import type { FixedExpense } from "@/types";
 
@@ -114,6 +119,30 @@ export function FixedExpenseSheet({
     }
   };
 
+  const handleDelete = async () => {
+    if (!editing) return;
+    const snapshot: FixedExpense = { ...editing };
+    setSubmitting(true);
+    try {
+      await deleteFixedExpense(editing.id);
+      onOpenChange(false);
+      toast("Assinatura excluída", {
+        action: {
+          label: "Desfazer",
+          onClick: () => {
+            void addFixedExpense(snapshot);
+          },
+        },
+        duration: 5000,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível excluir");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
     void submit();
@@ -187,6 +216,21 @@ export function FixedExpenseSheet({
               onChange={setCategoryId}
             />
           </div>
+
+          {editing && (
+            <div className="border-t border-border pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={submitting}
+                onClick={() => void handleDelete()}
+                className="w-full justify-center text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Excluir assinatura
+              </Button>
+            </div>
+          )}
 
           <button type="submit" hidden aria-hidden tabIndex={-1} />
         </form>
