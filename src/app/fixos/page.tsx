@@ -7,16 +7,14 @@ import { Fab } from "@/components/fab";
 import { FixedExpenseRow } from "@/components/fixed-expense-row";
 import { FixedExpenseSheet } from "@/components/fixed-expense-sheet";
 import { useCategoryMap } from "@/hooks/use-categories";
-import {
-  useFixedExpenses,
-  useFixedTotalCents,
-} from "@/hooks/use-fixed-expenses";
+import { useFixedExpenses } from "@/hooks/use-fixed-expenses";
+import { useFixedYearly } from "@/hooks/use-fixed-yearly";
 import { formatBRL } from "@/lib/money";
 import type { FixedExpense } from "@/types";
 
 export default function FixosPage() {
   const items = useFixedExpenses();
-  const total = useFixedTotalCents();
+  const yearly = useFixedYearly();
   const categoryMap = useCategoryMap();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -41,12 +39,22 @@ export default function FixosPage() {
           Total mensal ativo
         </p>
         <p className="mt-1 text-3xl font-semibold tabular-nums">
-          {formatBRL(total)}
+          {formatBRL(yearly.monthlyCents)}
         </p>
         <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-          {activeCount} de {items.length}{" "}
+          ≈ {formatBRL(yearly.yearlyCents)} por ano · {activeCount} de{" "}
+          {items.length}{" "}
           {items.length === 1 ? "assinatura" : "assinaturas"} ativas
         </p>
+        {yearly.top && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Maior:{" "}
+            <strong className="text-foreground">{yearly.top.name}</strong> —{" "}
+            <span className="tabular-nums">
+              {formatBRL(yearly.topYearlyCents)}/ano
+            </span>
+          </p>
+        )}
       </div>
 
       {items.length === 0 ? (

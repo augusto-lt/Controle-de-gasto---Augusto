@@ -68,6 +68,7 @@ const KV_SEEDED = "seeded:v1";
 
 export const DEFAULT_SETTINGS: Settings = {
   dailyGoalCents: 1000, // R$ 10,00
+  monthlyIncomeCents: 0, // 0 = ainda não configurada (UI esconde saldo)
   theme: "system",
 };
 
@@ -85,6 +86,10 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
 
 export async function setDailyGoal(cents: number): Promise<void> {
   await setSettings({ dailyGoalCents: Math.max(0, Math.round(cents)) });
+}
+
+export async function setMonthlyIncome(cents: number): Promise<void> {
+  await setSettings({ monthlyIncomeCents: Math.max(0, Math.round(cents)) });
 }
 
 export async function setTheme(theme: ThemePreference): Promise<void> {

@@ -33,5 +33,7 @@ export type ThemePreference = "light" | "dark" | "system";
 
 export interface Settings {
   dailyGoalCents: number;
+  /** Renda mensal — quando > 0, dashboard mostra saldo restante do mês. */
+  monthlyIncomeCents: number;
   theme: ThemePreference;
 }

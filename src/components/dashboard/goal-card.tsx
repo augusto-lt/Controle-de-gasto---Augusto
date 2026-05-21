@@ -1,5 +1,6 @@
 "use client";
 
+import { Flame } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatBRL } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,8 @@ interface GoalCardProps {
   todayCents: number;
   goalCents: number;
   status: "ok" | "warn" | "danger";
+  /** Dias consecutivos dentro da meta (de ontem para trás). */
+  streakDays: number;
 }
 
 const STATUS_BG: Record<GoalCardProps["status"], string> = {
@@ -28,10 +31,16 @@ const STATUS_LABEL: Record<GoalCardProps["status"], string> = {
   danger: "Muito acima da meta",
 };
 
-export function GoalCard({ todayCents, goalCents, status }: GoalCardProps) {
+export function GoalCard({
+  todayCents,
+  goalCents,
+  status,
+  streakDays,
+}: GoalCardProps) {
   const ratio = goalCents > 0 ? todayCents / goalCents : 0;
   const widthPct = Math.min(100, ratio * 100);
   const overPct = ratio > 1 ? Math.round(ratio * 100) : null;
+  const hasStreak = streakDays > 0;
 
   return (
     <Card>
@@ -71,6 +80,16 @@ export function GoalCard({ todayCents, goalCents, status }: GoalCardProps) {
             style={{ width: `${widthPct}%` }}
           />
         </div>
+
+        {hasStreak && (
+          <div className="flex items-center gap-1.5 pt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <Flame className="size-4" aria-hidden />
+            <span className="tabular-nums">
+              {streakDays}{" "}
+              {streakDays === 1 ? "dia" : "dias"} dentro da meta
+            </span>
+          </div>
+        )}
       </div>
     </Card>
   );

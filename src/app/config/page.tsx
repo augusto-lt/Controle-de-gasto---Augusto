@@ -3,6 +3,7 @@
 import { DailyGoalRow } from "@/components/config/daily-goal-row";
 import { DangerZone } from "@/components/config/danger-zone";
 import { DataRow } from "@/components/config/data-row";
+import { IncomeRow } from "@/components/config/income-row";
 import { InstallApp } from "@/components/config/install-app";
 import { Section } from "@/components/config/section";
 import { ThemeRow } from "@/components/config/theme-row";
@@ -16,8 +17,11 @@ export default function ConfigPage() {
         <InstallApp />
       </Section>
 
-      <Section title="Preferências">
-        <DailyGoalRow />
+      <Section title="Orçamento">
+        <div className="flex flex-col divide-y divide-border">
+          <IncomeRow />
+          <DailyGoalRow />
+        </div>
       </Section>
 
       <Section title="Aparência">
